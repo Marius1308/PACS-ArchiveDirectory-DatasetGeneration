@@ -20,8 +20,8 @@ def getPatientIDs():
 
 ae = AE()
 ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
-addr = "172.16.0.67"
-port = 2104
+addr = ""
+port = 0
 assoc = ae.associate(addr, port)
 
 studyDescriptions = []
