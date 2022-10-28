@@ -1,3 +1,5 @@
+from copy import copy
+from traceback import print_tb
 from pynetdicom import AE
 from pydicom.dataset import Dataset
 from pynetdicom.sop_class import PatientRootQueryRetrieveInformationModelFind
@@ -12,29 +14,30 @@ class Study:
         self.studyDate = studyDate
         self.series = {}
     def addSeries(self, seriesID):
-        self.series[str(seriesID)] = 0
+        idString = str(seriesID)
+        if not idString in self.series:
+            self.series[str(seriesID)] = 0
 
 def getPatientIDs():
     return [540321]
 
 
+accessInfos = open('access.txt','r').readlines()
+
 ae = AE()
 ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
-addr = "172.16.0.67"
-port = 2104
+addr = accessInfos[0]
+port = int(accessInfos[1])
 assoc = ae.associate(addr, port)
 
-studyDescriptions = []
 
-def getStudiesForPatient(patientId):
-    global assoc, studyDescriptions
-    studies = {}
+def getStudiesForPatient(patientId, existingStudies = {}, studyDescription = '', modality = ''):
+    global assoc
+    studies = copy(existingStudies)
     ds = Dataset()
     ds.PatientID = f'{patientId}'
-    ds.StudyDescription = ''
-    ds.StudyDescription = ''
-    #ds.StudyDescription = '%Prostata%'
-    ds.Modality = ''
+    ds.StudyDescription = studyDescription
+    ds.Modality = modality
     ds.QueryRetrieveLevel = 'SERIES'
     ds.StudyInstanceUID = ''
     ds.SeriesInstanceUID = ''
@@ -44,11 +47,7 @@ def getStudiesForPatient(patientId):
         responses = assoc.send_c_find(
             ds, PatientRootQueryRetrieveInformationModelFind)
         for (status, identifier) in responses:
-            if identifier:
-                exists = False
-                if str(identifier.Modality) not in studyDescriptions:
-                    studyDescriptions.append(str(identifier.Modality))
-                    print(studyDescriptions)
+            if identifier:                
                 studyUID = str(identifier.StudyInstanceUID)
                 seriesUID = str(identifier.SeriesInstanceUID)
                 studyDate = str(identifier.StudyDate)
@@ -61,12 +60,10 @@ def getStudiesForPatient(patientId):
         print('Trying to reconnect')
         ae = AE()
         ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
-        addr = "172.16.0.67"
-        port = 2104
         assoc = ae.associate(addr, port)
         if assoc.is_established:
             print(f'Reconnected.')
-            studies = getStudiesForPatient(patientId)
+            studies = getStudiesForPatient(patientId, studies, studyDescription, modality)
         else:
             print('Failed')
             sys.exit()
@@ -74,7 +71,7 @@ def getStudiesForPatient(patientId):
 
 drives= ["W:\\","X:\\","Y:\\","Z:\\"]
 
-newRootPath = "V:\\datasetNeo"
+newRootPath = "V:\\datasetNeoV2"
 
 def renameDicomSeries(folder):
     for file in os.listdir(folder):
@@ -99,11 +96,6 @@ def copyFile(path, study):
         if seriesUID in study.series:
             newPath = newSeriesPath(path, study, seriesUID)
             newPath += ".dcm"
-            #if [0x2005, 0x140f] not in dcm:
-            #    print("no Tag")
-            #    return
-            #if dcm[0x2005, 0x140f].value[0][0x0008, 0x9209].value == "T1":
-            #    return
             os.makedirs(os.path.dirname(newPath), exist_ok=True)
             shutil.copy(path, newPath)
     if file_extension == ".tar":
@@ -111,11 +103,6 @@ def copyFile(path, study):
         member = my_tar.getmembers()[0]
         openedTar = my_tar.extractfile(member)
         dcm = dicom.dcmread(openedTar)
-        #if [0x0018, 0x1030] not in dcm:
-        #    print("no Tag")
-        #    return
-        #if "T2W_TSE_ax" not in dcm[0x0018, 0x1030].value:
-        #    return
         seriesUID = dcm.SeriesInstanceUID
         if seriesUID in study.series:
             newPath = newSeriesPath(path, study, seriesUID)
@@ -134,26 +121,16 @@ def getStudieFolder(study):
 
     return folders
             
-patientsWith0= 0
-patientsWith1= 0
-patientsWith2= 0
-patientsWith3= 0
-patientsWithMore= 0
+
 def copyImagesForPatient(patientId):
-    global patientsWith0, patientsWith1, patientsWith2, patientsWith3, patientsWithMore
-    studies = getStudiesForPatient(patientId)
-    print(f'studies found: {len(studies)}')
-    if len(studies) == 0:
-        patientsWith0 += 1
-    if len(studies) == 1:
-        patientsWith1 += 1
-    if len(studies) == 2:
-        patientsWith2 += 1
-    if len(studies) == 3:
-        patientsWith3 += 1
-    if len(studies) >= 4:
-        patientsWithMore += 1
-    return
+    global patientsWith0, patientsWith1, patientsWith2, patientsWith3, patientsWithMore, modalities, i, pIDsAll
+    studies = {}
+    studies = getStudiesForPatient(patientId, studyDescription="%Abdomen%", modality="MR")
+    studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%Prost%", modality="MR")
+    studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%prost%", modality="MR")
+    studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%PROST%", modality="MR")
+    studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%Becken%", modality="MR")
+    studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%BECKEN%", modality="MR")
 
     for s in studies:
         study = studies[s]
@@ -172,13 +149,5 @@ for index, row in df.iterrows():
     print(f'patient: {patientId} ({index})')
     copyImagesForPatient(patientId)
 
-
-print(f"0: {patientsWith0}")
-print(f"1: {patientsWith1}")
-print(f"2: {patientsWith2}")
-print(f"3: {patientsWith3}")
-print(f"more: {patientsWithMore}")
-print("")
-print(studyDescriptions)
 
 assoc.release()
