@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pydicom as dicom
 import sys, os, pickle, glob
 
-baseDir = "V://datasetV2-T2"
+baseDir = "V://datasetV2"
 
 
 
@@ -350,9 +350,10 @@ if __name__ == "__main__":
     if not patient in idList:
         print(f"Patient {patient} not found")
         sys.exit()
-    
     if patient.isnumeric():
         patient = idList[patient]
+
+    print(patient, idList[patient])
 
     patientPath = os.path.join(baseDir, patient)
     paths = glob.glob(os.path.join(patientPath, "**/*.dcm"), recursive=True)

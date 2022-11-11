@@ -26,7 +26,7 @@ accessInfos = open('access.txt','r').readlines()
 
 ae = AE()
 ae.add_requested_context(PatientRootQueryRetrieveInformationModelFind)
-addr = accessInfos[0]
+addr = accessInfos[0][:-1]
 port = int(accessInfos[1])
 assoc = ae.associate(addr, port)
 
@@ -71,7 +71,7 @@ def getStudiesForPatient(patientId, existingStudies = {}, studyDescription = '',
 
 drives= ["W:\\","X:\\","Y:\\","Z:\\"]
 
-newRootPath = "V:\\datasetNeoV2"
+newRootPath = "V:\\datasetAll"
 
 def renameDicomSeries(folder):
     for file in os.listdir(folder):
@@ -123,7 +123,6 @@ def getStudieFolder(study):
             
 
 def copyImagesForPatient(patientId):
-    global patientsWith0, patientsWith1, patientsWith2, patientsWith3, patientsWithMore, modalities, i, pIDsAll
     studies = {}
     studies = getStudiesForPatient(patientId, studyDescription="%Abdomen%", modality="MR")
     studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%Prost%", modality="MR")
@@ -142,7 +141,7 @@ def copyImagesForPatient(patientId):
 
 
 
-df = pd.read_csv('C:\\Users\\vpnhome06\\Documents\\IdsNeo.csv')
+df = pd.read_csv('C:\\Users\\vpnhome06\\Documents\\IdsAll.csv')
 
 for index, row in df.iterrows():
     patientId = str(row["1"])
