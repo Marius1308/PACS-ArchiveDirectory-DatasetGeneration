@@ -12,7 +12,7 @@ import pandas as pd
 
 tags = ['AccessionNumber', 'ModalitiesInStudy', 'StudyDescription']
 
-root = "V:\\datasetV2"
+root = "V:\\datasetAll"
 
 idList = {}
 idPath = os.path.join(root, "PatientIDs.pkl")
@@ -137,7 +137,10 @@ def writePatientSummary(patient_id, patient_infos, output_path):
         writer = csv.writer(f, delimiter =";")
         writer.writerow(header)
         for patient_info in patient_infos:
-            studyData = [patient_id, idList[patient_id], patient_info["accession_number"], patient_info["study_description"]]
+            if(patient_id.isnumeric()):
+                studyData = ["-", patient_id, patient_info["accession_number"], patient_info["study_description"]]
+            else:
+                studyData = [patient_id, idList[patient_id], patient_info["accession_number"], patient_info["study_description"]]
             for series in patient_info["series"]:
                 seriesData = [] + studyData
                 for tag in series_meta_tags:

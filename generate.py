@@ -3,7 +3,7 @@ from traceback import print_tb
 from pynetdicom import AE
 from pydicom.dataset import Dataset
 from pynetdicom.sop_class import PatientRootQueryRetrieveInformationModelFind
-import tarfile, os, shutil, sys
+import tarfile, os, shutil, sys, pickle
 import pydicom as dicom
 import pandas as pd
 
@@ -71,7 +71,7 @@ def getStudiesForPatient(patientId, existingStudies = {}, studyDescription = '',
 
 drives= ["W:\\","X:\\","Y:\\","Z:\\"]
 
-newRootPath = "V:\\datasetAll"
+newRootPath = "V:\\datasetNichtGefunden"
 
 def renameDicomSeries(folder):
     for file in os.listdir(folder):
@@ -131,8 +131,11 @@ def copyImagesForPatient(patientId):
     studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%Becken%", modality="MR")
     studies = getStudiesForPatient(patientId, existingStudies=studies, studyDescription="%BECKEN%", modality="MR")
 
+    print("Studies found: ", len(studies))
+
     for s in studies:
         study = studies[s]
+        print(study.studyDate)
         for folder in getStudieFolder(study):
             for element in os.scandir(folder):
                 name = element.name
@@ -141,11 +144,23 @@ def copyImagesForPatient(patientId):
 
 
 
-df = pd.read_csv('C:\\Users\\vpnhome06\\Documents\\IdsAll.csv')
+df = pd.read_csv('C:\\Users\\vpnhome06\\Documents\\IdsNichtGefunden.csv')
+
+idList = {}
+
+#idPath = os.path.join("V://datasetAll", "PatientIDs.pkl")
+#if os.path.exists(idPath):
+#    with open(idPath, "rb") as input_file:
+#        idList = pickle.load(input_file)
 
 for index, row in df.iterrows():
     patientId = str(row["1"])
+    if(os.path.isdir(os.path.join(newRootPath, patientId))):
+        print("skip ", patientId)
+        continue
+    
     print(f'patient: {patientId} ({index})')
+
     copyImagesForPatient(patientId)
 
 
