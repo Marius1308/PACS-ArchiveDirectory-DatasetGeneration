@@ -98,33 +98,37 @@ def cropImg(pixels, coords, augmentationFunction = default):
     return cropedImg, coords
 
 
-def cropAndSave(newName, pixels, coords, augmentationFunction = default):
+def cropAndSave(newName,newBaseDir, pixels, coords, augmentationFunction = default):
     newDcm, newCoords = cropImg(pixels, coords, augmentationFunction)
         
-    cv2.imwrite(os.path.join(datasetDir, newName + ".png"), newDcm*255)
+    cv2.imwrite(os.path.join(newBaseDir, newName + ".png"), newDcm*255)
 
     #Resize Image:
-    img = cv2.imread(os.path.join(datasetDir, newName + ".png"))
+    img = cv2.imread(os.path.join(newBaseDir, newName + ".png"))
     res = cv2.resize(img, dsize=(250, 250), interpolation=cv2.INTER_CUBIC)
     res = numpy.asarray(res)
     for coord in coords:
         coord["x"] = int((coord["x"]) / len(img[0]) * 250)
         coord["y"] = int((coord["y"]) / len(img) * 250)
-        res[coord["y"],coord["x"]] = 255
-    cv2.imwrite(os.path.join(datasetDir, newName + ".png"), res)
+        #res[coord["y"],coord["x"]] = 255
+    cv2.imwrite(os.path.join(newBaseDir, newName + ".png"), res)
 
-
-    writeCoords(os.path.join(datasetDir, newName + ".txt"), newCoords)
+    labelDir = os.path.join(newBaseDir, "label")
+    os.makedirs(labelDir, exist_ok=True)
+    writeCoords( os.path.join(labelDir, newName + ".txt"), newCoords)
 
 
 
 baseDir = "V:\datasetV2-T2"
-datasetDir = "V:\MLDataset"
+datasetDir = "V:\MLDatasetAug1"
 patient_folders = [o for o in os.listdir(baseDir) if os.path.isdir(os.path.join(baseDir,o))]
-os.makedirs(datasetDir, exist_ok=True)
+
 sets = 0
 patients = 0
 for patient in patient_folders:
+    folder = "train"
+    if(random.random() < 0.3):
+        folder = "validation"
     print(patient)
     patientPath = os.path.join(baseDir, patient)
     paths = glob.glob(os.path.join(patientPath, "**/*.txt"), recursive=True)
@@ -136,9 +140,11 @@ for patient in patient_folders:
         coords = readCoords(path)
         if(len(coords) != 4):
             continue
-
-        cropAndSave(newName + "-D", numpy.ndarray.copy(dcmPixels), copy.deepcopy(coords))
-        cropAndSave(newName + "-H", numpy.ndarray.copy(dcmPixels), copy.deepcopy(coords), flipH)
+        
+        newBaseDir = os.path.join(datasetDir, folder)
+        os.makedirs(newBaseDir, exist_ok=True)
+        cropAndSave(newName, newBaseDir, numpy.ndarray.copy(dcmPixels), copy.deepcopy(coords))
+        cropAndSave(newName + "-H",newBaseDir, numpy.ndarray.copy(dcmPixels), copy.deepcopy(coords), flipH)
         
     if(len(paths) > 0):
         patients += 1

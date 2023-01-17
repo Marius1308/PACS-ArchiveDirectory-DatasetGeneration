@@ -174,9 +174,9 @@ def drawBioPoints(x,y):
     markers = []
     for center in seriesPaths[s]["coords"]:
         if center[2]:
-            markers.append(ax.plot(center[0] + x, center[1]+ y, marker="o", markersize=2, markeredgecolor="none", markerfacecolor="red"))
+            markers.append(ax.plot(center[0] + x, center[1]+ y, marker="o", markersize=5, markeredgecolor="none", markerfacecolor="red"))
         else:
-            markers.append(ax.plot(center[0] + x, center[1] + y, marker="o", markersize=2, markeredgecolor="none", markerfacecolor="green"))
+            markers.append(ax.plot(center[0] + x, center[1] + y, marker="o", markersize=5, markeredgecolor="none", markerfacecolor="green"))
 
 i = 1
 s = 0
